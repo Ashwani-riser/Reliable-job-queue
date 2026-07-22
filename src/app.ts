@@ -2,8 +2,10 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import errorHandler from "./middlewares/error.middleware";
 
 const app = express();
+app.use(errorHandler);
 
 /**
  * Security Middleware
