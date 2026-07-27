@@ -1,19 +1,18 @@
+// health.routes.ts
+
 import { Router } from "express";
 import ApiResponse from "../utils/ApiResponse";
 
-const router = Router();
+const healthRouter = Router();
 
-router.get("/", (_req, res) => {
+healthRouter.get("/", (_req, res) => {
   return res.status(200).json(
     new ApiResponse(
       200,
-      {
-        status: "OK",
-        uptime: process.uptime(),
-      },
-      "Server is healthy"
+      { status: "OK" },
+      "Server is running successfully"
     )
   );
 });
 
-export default router;
+export default healthRouter;
