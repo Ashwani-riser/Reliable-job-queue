@@ -1,13 +1,25 @@
 import app from "./app";
-import logger from "./loggers/logger";
+import connectDB from "./config/db";
 import { env } from "./config/env";
+import logger from "./loggers/logger";
 
-app.listen(env.PORT, () => {
-  logger.info(
-    {
-      port: env.PORT,
-      environment: env.NODE_ENV,
-    },
-    "Server started successfully"
-  );
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    app.listen(env.PORT, () => {
+      logger.info(
+        {
+          port: env.PORT,
+          environment: env.NODE_ENV,
+        },
+        "Server started successfully"
+      );
+    });
+  } catch (error) {
+    logger.fatal({ error }, "Application failed to start");
+    process.exit(1);
+  }
+};
+
+startServer();
