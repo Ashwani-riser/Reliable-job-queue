@@ -1,8 +1,10 @@
 import { Router } from "express";
-import healthRouter from "./health.routes";
+import healthRoutes from "./health.routes";
+import jobRoutes from "./job.routes";
 
 const router = Router();
 
-router.use("/health", healthRouter);
+router.use("/health", healthRoutes);
+router.use("/jobs", jobRoutes);
 
-export default router;        
+export default router;
