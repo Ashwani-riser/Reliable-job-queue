@@ -3,6 +3,7 @@
 import { Worker, Job } from "bullmq";
 import redis from "../config/redis";
 import logger from "../loggers/logger";
+import JobModel, { JobStatus } from "../models/job.model";
 
 interface EmailJobData {
   name: string;
@@ -12,17 +13,25 @@ interface EmailJobData {
 export const jobWorker = new Worker<EmailJobData>(
   "job-queue",
   async (job: Job<EmailJobData>) => {
-    logger.info(
-      {
-        jobId: job.id,
-        jobName: job.name,
-        data: job.data,
-      },
-      "Job processing started"
-    );
-
     try {
-      // Simulate some work (Email Sending)
+      // Update status -> PROCESSING
+      await JobModel.findOneAndUpdate(
+        { queueJobId: job.id },
+        {
+          status: JobStatus.PROCESSING,
+        }
+      );
+
+      logger.info(
+        {
+          jobId: job.id,
+          jobName: job.name,
+          data: job.data,
+        },
+        "Job processing started"
+      );
+
+      // Simulate Email Sending
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
       logger.info(
@@ -33,11 +42,29 @@ export const jobWorker = new Worker<EmailJobData>(
         "Email sent successfully"
       );
 
+      // Update status -> COMPLETED
+      await JobModel.findOneAndUpdate(
+        { queueJobId: job.id },
+        {
+          status: JobStatus.COMPLETED,
+        }
+      );
+
       return {
         success: true,
         message: "Job completed successfully",
       };
     } catch (error) {
+      // Update status -> FAILED
+      await JobModel.findOneAndUpdate(
+        { queueJobId: job.id },
+        {
+          status: JobStatus.FAILED,
+          error:
+            error instanceof Error ? error.message : "Unknown Error",
+        }
+      );
+
       logger.error(
         {
           jobId: job.id,
