@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import asyncHandler from "../utils/asyncHandler";
-import jobService from "../services/job.service";
 import ApiResponse from "../utils/ApiResponse";
+import jobService from "../services/job.service";
+import { JobStatus } from "../models/job.model";
+import ApiError from "../errors/ApiError";
 
 class JobController {
   // Create Job
@@ -19,8 +21,15 @@ class JobController {
   });
 
   // Get All Jobs
-  getAllJobs = asyncHandler(async (_req: Request, res: Response) => {
-    const jobs = await jobService.getAllJobs();
+  getAllJobs = asyncHandler(async (req: Request, res: Response) => {
+    const status = req.query.status as JobStatus | undefined;
+
+    // Validate status if provided
+    if (status && !Object.values(JobStatus).includes(status)) {
+      throw new ApiError(400, "Invalid job status");
+    }
+
+    const jobs = await jobService.getAllJobs(status);
 
     return res.status(200).json(
       new ApiResponse(200, jobs, "Jobs fetched successfully")
@@ -29,14 +38,14 @@ class JobController {
 
   // Get Job By Id
   getJobById = asyncHandler(async (req: Request, res: Response) => {
-  const id  =req.params.id as string;
+    const id = req.params.id as string;
 
-  const job = await jobService.getJobById(id);
+    const job = await jobService.getJobById(id);
 
-  return res.status(200).json(
-    new ApiResponse(200, job, "Job fetched successfully")
-  );
-});
+    return res.status(200).json(
+      new ApiResponse(200, job, "Job fetched successfully")
+    );
+  });
 }
 
 export default new JobController();

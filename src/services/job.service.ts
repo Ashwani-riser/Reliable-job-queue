@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import ApiError from "../errors/ApiError";
-import Job from "../models/job.model";
+import Job, { JobStatus } from "../models/job.model";
 import { jobQueue } from "../queues/job.queue";
 
 export interface CreateJobData {
@@ -9,6 +9,7 @@ export interface CreateJobData {
 }
 
 class JobService {
+  // Create Job
   async createJob(data: CreateJobData) {
     const job = await Job.create({
       name: data.name,
@@ -26,12 +27,20 @@ class JobService {
     return job;
   }
 
-  async getAllJobs() {
-    return await Job.find()
+  // Get All Jobs (with optional status filter)
+  async getAllJobs(status?: JobStatus) {
+    const filter: { status?: JobStatus } = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    return await Job.find(filter)
       .sort({ createdAt: -1 })
       .lean();
   }
 
+  // Get Job By Id
   async getJobById(jobId: string) {
     if (!mongoose.Types.ObjectId.isValid(jobId)) {
       throw new ApiError(400, "Invalid Job ID");
