@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+import ApiError from "../errors/ApiError";
 import Job from "../models/job.model";
 import { jobQueue } from "../queues/job.queue";
 
@@ -7,7 +9,6 @@ export interface CreateJobData {
 }
 
 class JobService {
-  // Create Job
   async createJob(data: CreateJobData) {
     const job = await Job.create({
       name: data.name,
@@ -25,13 +26,24 @@ class JobService {
     return job;
   }
 
-  // Get All Jobs
   async getAllJobs() {
-    const jobs = await Job.find().sort({
-      createdAt: -1,
-    });
+    return await Job.find()
+      .sort({ createdAt: -1 })
+      .lean();
+  }
 
-    return jobs;
+  async getJobById(jobId: string) {
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+      throw new ApiError(400, "Invalid Job ID");
+    }
+
+    const job = await Job.findById(jobId).lean();
+
+    if (!job) {
+      throw new ApiError(404, "Job not found");
+    }
+
+    return job;
   }
 }
 

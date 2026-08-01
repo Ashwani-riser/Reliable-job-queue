@@ -14,26 +14,29 @@ class JobController {
     });
 
     return res.status(201).json(
-      new ApiResponse(
-        201,
-        job,
-        "Job added to queue successfully"
-      )
+      new ApiResponse(201, job, "Job added to queue successfully")
     );
   });
 
   // Get All Jobs
-  getAllJobs = asyncHandler(async (req: Request, res: Response) => {
+  getAllJobs = asyncHandler(async (_req: Request, res: Response) => {
     const jobs = await jobService.getAllJobs();
 
     return res.status(200).json(
-      new ApiResponse(
-        200,
-        jobs,
-        "Jobs fetched successfully"
-      )
+      new ApiResponse(200, jobs, "Jobs fetched successfully")
     );
   });
+
+  // Get Job By Id
+  getJobById = asyncHandler(async (req: Request, res: Response) => {
+  const id  =req.params.id as string;
+
+  const job = await jobService.getJobById(id);
+
+  return res.status(200).json(
+    new ApiResponse(200, job, "Job fetched successfully")
+  );
+});
 }
 
 export default new JobController();
