@@ -46,6 +46,18 @@ class JobController {
       new ApiResponse(200, job, "Job fetched successfully")
     );
   });
+ // Retry Failed Job
+   retryJob = asyncHandler(async (req: Request, res: Response) => {
+      const id = req.params.id as string;
+
+      const job = await jobService.retryJob(id);
+
+        return res.status(200).json(
+          new ApiResponse(200, job, "Job retried successfully")
+        );
+  });
+
+  
 }
 
 export default new JobController();

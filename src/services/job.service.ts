@@ -54,6 +54,49 @@ class JobService {
 
     return job;
   }
+
+  // Retry Failed Job
+async retryJob(jobId: string) {
+  // Validate ObjectId
+  if (!mongoose.Types.ObjectId.isValid(jobId)) {
+    throw new ApiError(400, "Invalid Job ID");
+  }
+
+  // Find Job
+  const job = await Job.findById(jobId);
+
+  if (!job) {
+    throw new ApiError(404, "Job not found");
+  }
+
+  // Only failed jobs can be retried
+  if (job.status !== JobStatus.FAILED) {
+    throw new ApiError(
+      400,
+      "Only failed jobs can be retried"
+    );
+  }
+
+  // Add job back to Redis Queue
+  const queueJob = await jobQueue.add(
+    "send-email",
+    {
+      name: job.name,
+      email: job.email,
+    }
+  );
+
+  // Update MongoDB
+  job.status = JobStatus.QUEUED;
+  job.queueJobId = String(queueJob.id);
+  job.error = null;
+  job.attempts += 1;
+
+  await job.save();
+
+  return job;
+}
+
 }
 
 export default new JobService();
