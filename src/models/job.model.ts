@@ -5,6 +5,7 @@ export enum JobStatus {
   PROCESSING = "PROCESSING",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
+  DLQ = "DLQ",
 }
 
 export interface IJob extends Document {
@@ -12,8 +13,8 @@ export interface IJob extends Document {
   email: string;
   queueJobId?: string;
   status: JobStatus;
-  attempts: number; //retry count
-  error?: string; //SMTP Authentication Failed
+  attempts: number;
+  error?: string;
 }
 
 const jobSchema = new Schema<IJob>(
@@ -58,4 +59,4 @@ const jobSchema = new Schema<IJob>(
 
 const Job = model<IJob>("Job", jobSchema);
 
-export default Job;.021
+export default Job;
