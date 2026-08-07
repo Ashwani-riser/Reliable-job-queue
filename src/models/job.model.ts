@@ -14,7 +14,7 @@ export interface IJob extends Document {
   queueJobId?: string;
   status: JobStatus;
   attempts: number;
-  error?: string;
+  error?: string | null;
 }
 
 const jobSchema = new Schema<IJob>(

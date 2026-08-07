@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import ApiError from "../errors/ApiError";
 import Job, { JobStatus } from "../models/job.model";
 import { jobQueue } from "../queues/job.queue";
+import { dlqQueue } from "../queues/dlq.queue";
 
 export interface CreateJobData {
   name: string;
@@ -21,7 +22,7 @@ class JobService {
       email: data.email,
     });
 
-    job.queueJobId = queueJob.id;
+    job.queueJobId = String(queueJob.id);
     await job.save();
 
     return job;
@@ -56,47 +57,65 @@ class JobService {
   }
 
   // Retry Failed Job
-async retryJob(jobId: string) {
-  // Validate ObjectId
-  if (!mongoose.Types.ObjectId.isValid(jobId)) {
-    throw new ApiError(400, "Invalid Job ID");
-  }
+  async retryJob(jobId: string) {
+    // Validate Job ID
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+      throw new ApiError(400, "Invalid Job ID");
+    }
 
-  // Find Job
-  const job = await Job.findById(jobId);
+    // Find Job
+    const job = await Job.findById(jobId);
 
-  if (!job) {
-    throw new ApiError(404, "Job not found");
-  }
+    if (!job) {
+      throw new ApiError(404, "Job not found");
+    }
 
-  // Only failed jobs can be retried
-  if (job.status !== JobStatus.FAILED) {
-    throw new ApiError(
-      400,
-      "Only failed jobs can be retried"
-    );
-  }
+    // Only FAILED jobs can be retried
+    if (job.status !== JobStatus.FAILED) {
+      throw new ApiError(
+        400,
+        "Only failed jobs can be retried"
+      );
+    }
 
-  // Add job back to Redis Queue
-  const queueJob = await jobQueue.add(
-    "send-email",
-    {
+    // -----------------------------------
+    // Move to Dead Letter Queue (DLQ)
+    // -----------------------------------
+    if (job.attempts >= 3) {
+      await dlqQueue.add("dead-email", {
+        originalJobId: job._id.toString(),
+        name: job.name,
+        email: job.email,
+        error: job.error,
+      });
+
+      job.status = JobStatus.DLQ;
+
+      await job.save();
+
+      throw new ApiError(
+        400,
+        "Maximum retry limit exceeded. Job moved to Dead Letter Queue."
+      );
+    }
+
+    // -----------------------------------
+    // Retry in Main Queue
+    // -----------------------------------
+    const queueJob = await jobQueue.add("send-email", {
       name: job.name,
       email: job.email,
-    }
-  );
+    });
 
-  // Update MongoDB
-  job.status = JobStatus.QUEUED;
-  job.queueJobId = String(queueJob.id);
-  job.error = null;
-  job.attempts += 1;
+    job.status = JobStatus.QUEUED;
+    job.queueJobId = String(queueJob.id);
+    job.error = null;
+    job.attempts += 1;
 
-  await job.save();
+    await job.save();
 
-  return job;
-}
-
+    return job;
+  }
 }
 
 export default new JobService();

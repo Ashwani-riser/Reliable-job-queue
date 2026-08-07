@@ -9,8 +9,9 @@ async function startWorker() {
 
     logger.info("Redis connection verified");
 
-    // Import after connections are ready
+    // Register Workers
     await import("./workers/job.worker");
+    await import("./workers/dlq.worker");
 
     logger.info("Worker started successfully");
   } catch (error) {
