@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/Ashwani-riser/Reliable-job-queue#readme",
   "dependencies": {
+    "@bull-board/api": "^8.6.0",
+    "@bull-board/express": "^8.6.0",
     "bullmq": "^5.81.2",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
