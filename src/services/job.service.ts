@@ -17,10 +17,10 @@ class JobService {
       email: data.email,
     });
 
-    const queueJob = await jobQueue.add("send-email", {
-      name: data.name,
-      email: data.email,
-    });
+  const queueJob = await jobQueue.add("send-email", {
+  name: data.name,
+  email: data.email,
+});
 
     job.queueJobId = String(queueJob.id);
     await job.save();
